@@ -1,0 +1,54 @@
+#! /bin/bash
+repo_total=0
+
+print_all_usage() {
+    local wf_ids
+    local repo_name
+
+    wf_ids=$(gh api /repos/{owner}/{repo}/actions/workflows --jq ".workflows[].id")
+    repo_name=$(gh repo view --json name --jq .name)
+
+    printf "GitHub Actions Usage\\n\\n"
+    for wfid in $wf_ids
+    do
+        print_wf_usage $wfid
+    done
+    print_human_usage "Repo '$repo_name' Total" $repo_total
+}
+
+print_wf_usage() {
+    local wf_id
+    local wf_name
+    local ms_lines
+    local wf_total
+
+    wf_id=$1
+    wf_name=$(gh api /repos/{owner}/{repo}/actions/workflows/$wf_id --jq ".name")
+    ms_lines=$(gh api /repos/{owner}/{repo}/actions/workflows/$wf_id/timing --jq ".billable[].total_ms")
+    wf_total=0
+
+    for ms_line in $ms_lines
+    do
+        wf_total=$(( wf_total + ms_line ))
+        repo_total=$(( repo_total + ms_line ))
+    done
+
+    print_human_usage "Workflow '$wf_name'" $wf_total
+}
+
+print_human_usage() {
+    local prefix=$1
+    local usage=$2
+
+    if (( usage < 1000 )); then
+        printf "%s Usage: %sms\\n" "$prefix" "$usage"
+    elif (( usage < 60000 )); then
+        printf "%s Usage: %ss\\n" "$prefix" $((usage / 1000))
+    elif (( usage < 3600000 )); then
+        printf "%s Usage: %sm\\n" "$prefix" $((usage / 60000))
+    else 
+        printf "%s Usage: %sh (%sm)\\n" "$prefix" $((usage / 3600000)) $((usage / 60000))
+    fi
+}
+
+print_all_usage
