@@ -32,19 +32,24 @@ Repo 'project' Total Usage: 18h (1094m)
 ❯
 ```
 
-## Future Expansion
+## Future Enhancements
 
 Some things that would be nice to add (and you're welcome to encourage):
 
 - Org-Level Usage
     - Iterate over all the workflows in all the repos of an org and display all usage
     - Display the included minutes from the billing resource.
+    - Might be possible to predict if you're likely to go over your spending limit?
 - Specify Repo
     - Right now the extension assumes you want the current repo; wouldn't be that hard to allow you to specify a different repo
+- Period Information
+    - The usage is based on the billing period, but the extension doesn't currently tell you when the period started, how much time's left, etc.
 
-Some things that I'd like to add, but don't see a way to accomplish:
+Some things that I'd like to add, but don't see a way to accomplish using the API:
 
 - Actions Storage
     - I haven't found the storage usage of actions in the API anywhere, so I'm not displaying it.
+- Other Timeframes
+    - You can only get actions usage for the current time window, near as I can see, so you can't say "for the past three days" or "over the past six months" or "total by week for the past six weeks"
 
 On the technology side of things, I was originally planning on building this in Go (golang) as I've seen other GH extensions in Go but near as I can tell that would make it harder to work with private repos -- I'd need some way to get the authorization information, whereas wrapping Bash around `gh api`, ugly tho it is, lets me piggy back on the authorization you've already given `gh`.  I may look into this a bit more, because enhancing this extension by building more bash around more GH invocations with limited ability to handle JSON output isn't very appealing.
