@@ -16,7 +16,6 @@ remote: Counting objects: 100% (4/4), done.
 remote: Compressing objects: 100% (4/4), done.
 remote: Total 4 (delta 0), reused 4 (delta 0), pack-reused 0
 Receiving objects: 100% (4/4), done.
-❯
 ```
 
 ## Usage
@@ -29,7 +28,24 @@ GitHub Actions Usage
 Workflow 'CI' Usage: 15h (911m)
 Workflow 'CodeQL' Usage: 3h (183m)
 Repo 'project' Total Usage: 18h (1094m)
-❯
+```
+
+Or if you prefer, `gh actuse <repos>` to specify one or more GitHub repositories to which you have access:
+
+```
+❯ gh actuse google/go-github google/guava
+GitHub Actions Usage
+
+Repo google/go-github:
+- Workflow 'linter' Usage: 0ms
+- Workflow 'tests' Usage: 0ms
+- Total Usage: 0ms
+
+Repo google/guava:
+- Workflow 'CI' Usage: 0ms
+- Workflow '.github/workflows/dependabot.yml' Usage: 0ms
+- Workflow 'Validate Gradle Wrapper' Usage: 0ms
+- Total Usage: 0ms
 ```
 
 ## Future Enhancements
@@ -40,8 +56,6 @@ Some things that would be nice to add (and you're welcome to encourage):
     - Iterate over all the workflows in all the repos of an org and display all usage
     - Display the included minutes from the billing resource.
     - Might be possible to predict if you're likely to go over your spending limit?
-- Specify Repo
-    - Right now the extension assumes you want the current repo; wouldn't be that hard to allow you to specify a different repo
 - Period Information
     - The usage is based on the billing period, but the extension doesn't currently tell you when the period started, how much time's left, etc.
 

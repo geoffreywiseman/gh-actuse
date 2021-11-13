@@ -1,19 +1,23 @@
 #! /bin/bash
 repo_total=0
 
-print_all_usage() {
+print_repo_usage() {
     local wf_ids
     local repo_name
 
-    wf_ids=$(gh api /repos/{owner}/{repo}/actions/workflows --jq ".workflows[].id")
-    repo_name=$(gh repo view --json name --jq .name)
+    if ! repo_name=$(gh repo view "$1" --json name,owner --jq '( .owner.login + "/" + .name )' 2> /dev/null); then
+        printf "Can't find repo: %s\\n" "$1"
+        exit 1
+    fi
 
-    printf "GitHub Actions Usage\\n\\n"
+    printf "\\nRepo %s:\\n" "${repo_name}"
+    wf_ids=$(gh api "/repos/${repo_name}/actions/workflows" --jq ".workflows[].id")
     for wfid in $wf_ids
     do
-        print_wf_usage $wfid
+        print_wf_usage "$repo_name" "$wfid"
     done
-    print_human_usage "Repo '$repo_name' Total" $repo_total
+
+    print_human_usage "- Total" $repo_total
 }
 
 print_wf_usage() {
@@ -22,9 +26,10 @@ print_wf_usage() {
     local ms_lines
     local wf_total
 
-    wf_id=$1
-    wf_name=$(gh api /repos/{owner}/{repo}/actions/workflows/$wf_id --jq ".name")
-    ms_lines=$(gh api /repos/{owner}/{repo}/actions/workflows/$wf_id/timing --jq ".billable[].total_ms")
+    repo=$1
+    wf_id=$2
+    wf_name=$(gh api "/repos/${repo}/actions/workflows/$wf_id" --jq ".name")
+    ms_lines=$(gh api "/repos/${repo}/actions/workflows/$wf_id/timing" --jq ".billable[].total_ms")
     wf_total=0
 
     for ms_line in $ms_lines
@@ -33,7 +38,7 @@ print_wf_usage() {
         repo_total=$(( repo_total + ms_line ))
     done
 
-    print_human_usage "Workflow '$wf_name'" $wf_total
+    print_human_usage "- Workflow '$wf_name'" $wf_total
 }
 
 print_human_usage() {
@@ -51,4 +56,16 @@ print_human_usage() {
     fi
 }
 
-print_all_usage
+parse_and_run() {
+    printf "GitHub Actions Usage\\n"
+    if (( "$#" == 0 )); then
+        print_repo_usage "{owner}/{repo}"
+    else
+        while (( "$#" )); do
+            print_repo_usage "$1"
+            shift
+        done
+    fi
+}
+
+parse_and_run "$@"
