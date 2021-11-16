@@ -48,16 +48,17 @@ Repo google/guava:
 - Total Usage: 0ms
 ```
 
+Or, if you want to get information across a whole organization:
+```
+❯ gh actuse google
+```
+
+You need admin scope access to the organization to access the list of repos enabled for GH Actions, though.
+
+
 ## Future Enhancements
 
-Some things that would be nice to add (and you're welcome to encourage):
-
-- Org-Level Usage
-    - Iterate over all the workflows in all the repos of an org and display all usage
-    - Display the included minutes from the billing resource.
-    - Might be possible to predict if you're likely to go over your spending limit?
-- Period Information
-    - The usage is based on the billing period, but the extension doesn't currently tell you when the period started, how much time's left, etc.
+Things I've already considered adding and that seem possible to accomplish are listed in GitHub Issues. You're welcome to vote or contribute, or suggest a feature that you'd like that I haven't already listed.
 
 Some things that I'd like to add, but don't see a way to accomplish using the API:
 
