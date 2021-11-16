@@ -1,23 +1,79 @@
 #! /bin/bash
-repo_total=0
+declare repo_total
+declare org_total
+
+print_org_usage() {
+    local org_name
+    local enabled_repos
+    org_name=$1
+
+    printf "\\nOrganization: %s\\n" "$org_name"
+    enabled_repos=$(gh api "/orgs/$org_name/actions/permissions" --jq ".enabled_repositories")
+    case "$enabled_repos" in
+        all)
+        echo "- GitHub Actions enabled on All Repos"
+        print_org_all_repos "$org_name"
+        ;;
+        selected)
+        echo "- GitHub Actions enabled on Selected Repos"
+        print_org_selected_repos "$org_name"
+        ;;
+        none)
+        echo "- GitHub Actions is not enabled on any repositories"
+        ;;
+        *)
+        echo "- GitHub Actions is enabled on $enabled_repos?"
+    esac
+}
+
+print_org_all_repos() {
+    local org_name
+    local repos
+    org_name=$1
+    org_total=0
+    
+    repos=$(gh api "/orgs/TPAOutsourcing/repos?per_page=100" --jq '.[].name')
+    for repo in $repos
+    do
+        print_repo_usage "$org_name/$repo"
+    done
+
+    printf "\\n"
+    print_human_usage "All Repository Total" "$org_total"
+}
+
+print_org_selected_repos() {
+    local org_name
+    org_name=$1
+    
+    repos=$(gh api "/orgs/$org_name/actions/permissions/repositories?per_page=100" --jq '.[].name')
+    for repo in $repos
+    do
+        print_repo_usage "$org_name/$repo"
+    done
+}
 
 print_repo_usage() {
-    local wf_ids
     local repo_name
 
     if ! repo_name=$(gh repo view "$1" --json name,owner --jq '( .owner.login + "/" + .name )' 2> /dev/null); then
-        printf "Can't find repo: %s\\n" "$1"
+        if [[ "$1" == "" ]]; then
+            printf "\\nCurrent directory doesn't seem to be a repo that 'gh' recognizes.\\n"
+        else
+            printf "\\nCan't find repo: '%s' (%s)\\n" "$1" "$repo_name"
+        fi
+        
         exit 1
     fi
 
-    printf "\\nRepo %s:\\n" "${repo_name}"
-    wf_ids=$(gh api "/repos/${repo_name}/actions/workflows" --jq ".workflows[].id")
-    for wfid in $wf_ids
-    do
-        print_wf_usage "$repo_name" "$wfid"
-    done
+    printf "\\nRepo %s:\\n" "$repo_name"
+    repo_total=0
 
-    print_human_usage "- Total" $repo_total
+    while IFS="|" read -r wfid wfname; do
+        print_wf_usage "$repo_name" "$wfid" "$wfname"
+    done < <(gh api "/repos/${repo_name}/actions/workflows" --jq '.workflows[] | "\(.id)|\(.name)"') 
+    
+    print_human_usage "- Repo Total" $repo_total
 }
 
 print_wf_usage() {
@@ -28,14 +84,15 @@ print_wf_usage() {
 
     repo=$1
     wf_id=$2
-    wf_name=$(gh api "/repos/${repo}/actions/workflows/$wf_id" --jq ".name")
-    ms_lines=$(gh api "/repos/${repo}/actions/workflows/$wf_id/timing" --jq ".billable[].total_ms")
+    wf_name=$3
     wf_total=0
 
+    ms_lines=$(gh api "/repos/${repo}/actions/workflows/$wf_id/timing" --jq ".billable[].total_ms")
     for ms_line in $ms_lines
     do
         wf_total=$(( wf_total + ms_line ))
         repo_total=$(( repo_total + ms_line ))
+        org_total=$(( org_total + ms_line ))
     done
 
     print_human_usage "- Workflow '$wf_name'" $wf_total
@@ -56,13 +113,24 @@ print_human_usage() {
     fi
 }
 
+print_usage() {
+    local target
+    target=$1
+    
+    if [[ "$target" == */* ]]; then
+        print_repo_usage "$target"
+    else
+        print_org_usage "$target"
+    fi
+}
+
 parse_and_run() {
     printf "GitHub Actions Usage\\n"
     if (( "$#" == 0 )); then
-        print_repo_usage "{owner}/{repo}"
+        print_repo_usage
     else
         while (( "$#" )); do
-            print_repo_usage "$1"
+            print_usage "$1"
             shift
         done
     fi
