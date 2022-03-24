@@ -32,14 +32,36 @@ print_org_all_repos() {
     org_name=$1
     org_total=0
     
-    repos=$(gh api "/orgs/TPAOutsourcing/repos?per_page=100" --jq '.[].name')
-    for repo in $repos
+    local page=1
+    local error=0
+    while [ $error -eq 0 ]
     do
-        print_repo_usage "$org_name/$repo"
+        print_org_repos_page "$org_name" $page
+        error=$?
+        ((page++))
     done
 
     printf "\\n"
     print_human_usage "All Repository Total" "$org_total"
+}
+
+print_org_repos_page() {
+    local org_name
+    local page
+    org_name=$1
+    page=$2
+
+    repos=$(gh api "/orgs/$org_name/repos?page=$page" --jq '.[].name')
+    if [ -z "$repos" ]
+    then
+        return 1
+    else
+        for repo in $repos
+        do
+            print_repo_usage "$org_name/$repo"
+        done
+        return 0
+    fi
 }
 
 print_org_selected_repos() {
