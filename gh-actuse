@@ -1,6 +1,8 @@
 #! /bin/bash
-declare repo_total
-declare org_total
+declare repo_total_ms
+declare org_total_ms
+declare org_total_repos
+declare org_total_workflows
 
 print_org_usage() {
     local org_name
@@ -12,11 +14,11 @@ print_org_usage() {
     case "$enabled_repos" in
         all)
         echo "- GitHub Actions enabled on All Repos"
-        print_org_all_repos "$org_name"
+        print_org_repos "$org_name" "All Repos" "repos"
         ;;
         selected)
         echo "- GitHub Actions enabled on Selected Repos"
-        print_org_selected_repos "$org_name"
+        print_org_repos "$org_name" "Selected Repos" "actions/permissions/repositories"
         ;;
         none)
         echo "- GitHub Actions is not enabled on any repositories"
@@ -26,32 +28,35 @@ print_org_usage() {
     esac
 }
 
-print_org_all_repos() {
-    local org_name
-    local repos
-    org_name=$1
-    org_total=0
-    
+print_org_repos() {
+    local org_name=$1
+    local description=$2
+    local path=$3
+
+    org_total_ms=0
+    org_total_workflows=0
+    org_total_repos=0
+
     local page=1
     local error=0
     while [ $error -eq 0 ]
     do
-        print_org_repos_page "$org_name" $page
+        print_org_repos_page "$org_name" "$path" $page
         error=$?
         ((page++))
     done
 
     printf "\\n"
-    print_human_usage "All Repository Total" "$org_total"
+    printf "Finished scanning %d workflows in %d repos\\n" "$org_total_worflows" $org_total_repos
+    print_human_usage "$description Total" "$org_total_ms"
 }
 
 print_org_repos_page() {
-    local org_name
-    local page
-    org_name=$1
-    page=$2
+    local org_name=$1
+    local path=$2
+    local page=$3
 
-    repos=$(gh api "/orgs/$org_name/repos?page=$page" --jq '.[].name')
+    repos=$(gh api "/orgs/$org_name/$path?page=$page" --jq '.[].name')
     if [ -z "$repos" ]
     then
         return 1
@@ -62,17 +67,6 @@ print_org_repos_page() {
         done
         return 0
     fi
-}
-
-print_org_selected_repos() {
-    local org_name
-    org_name=$1
-    
-    repos=$(gh api "/orgs/$org_name/actions/permissions/repositories?per_page=100" --jq '.[].name')
-    for repo in $repos
-    do
-        print_repo_usage "$org_name/$repo"
-    done
 }
 
 print_repo_usage() {
@@ -89,13 +83,14 @@ print_repo_usage() {
     fi
 
     printf "\\nRepo %s:\\n" "$repo_name"
-    repo_total=0
+    ((org_total_repos++))
+    repo_total_ms=0
 
     while IFS="|" read -r wfid wfname; do
         print_wf_usage "$repo_name" "$wfid" "$wfname"
     done < <(gh api "/repos/${repo_name}/actions/workflows" --jq '.workflows[] | "\(.id)|\(.name)"') 
     
-    print_human_usage "- Repo Total" $repo_total
+    print_human_usage "- Repo Total" $repo_total_ms
 }
 
 print_wf_usage() {
@@ -113,8 +108,9 @@ print_wf_usage() {
     for ms_line in $ms_lines
     do
         wf_total=$(( wf_total + ms_line ))
-        repo_total=$(( repo_total + ms_line ))
-        org_total=$(( org_total + ms_line ))
+        repo_total_ms=$(( repo_total_ms + ms_line ))
+        org_total_ms=$(( org_total_ms + ms_line ))
+        ((org_total_worflows++))
     done
 
     print_human_usage "- Workflow '$wf_name'" $wf_total
