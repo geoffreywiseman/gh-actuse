@@ -1,8 +1,14 @@
 # GitHub Actions Usage
 
-A simple extension to display the usage (in time) of the GitHub Actions workflows in the current repository. This can be used to look at how various repositories are contributing to your overall GitHub Actions usage without needing to download the usage report and calculate subtotals.
+A simple extension to display the billable usage (in time) of GitHub Actions workflows within the current billable period. This can be used to look at how various repositories are contributing to your overall GitHub Actions usage without needing to download the usage report and calculate subtotals.
 
-The current implementation is a bash script wrapped around the `gh` cli.
+The limitations on billable usage and the current billable period is effectively all that's available through the API currently:
+- I can't go beyond the current billing period
+- I can't see usage minutes that aren't billable, like self-hosted runners, which don't incur billable time on GitHub Actions
+
+The current implementation is a bash script wrapped around the `gh` cli.  
+
+I'm working on a Go version using the GitHub Extension binary support in [gh-actions-usage](https://github.com/codiform/gh-actions-usage), but it's still a work in progress.
 
 ## Installing
 
