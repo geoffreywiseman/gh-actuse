@@ -47,7 +47,7 @@ print_org_repos() {
     done
 
     printf "\\n"
-    printf "Finished scanning %d workflows in %d repos\\n" "$org_total_worflows" $org_total_repos
+    printf "Finished scanning %d workflows in %d repos\\n" "$org_total_workflows" $org_total_repos
     print_human_usage "$description Total" "$org_total_ms"
 }
 
@@ -110,7 +110,7 @@ print_wf_usage() {
         wf_total=$(( wf_total + ms_line ))
         repo_total_ms=$(( repo_total_ms + ms_line ))
         org_total_ms=$(( org_total_ms + ms_line ))
-        ((org_total_worflows++))
+        ((org_total_workflows++))
     done
 
     print_human_usage "- Workflow '$wf_name'" $wf_total
