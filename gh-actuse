@@ -1,4 +1,4 @@
-#! /bin/bash
+#! /usr/bin/env bash
 declare repo_total_ms
 declare org_total_ms
 declare org_total_repos
