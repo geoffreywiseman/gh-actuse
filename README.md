@@ -8,7 +8,7 @@ The limitations on billable usage and the current billable period is effectively
 
 The current implementation is a bash script wrapped around the `gh` cli.  
 
-I'm working on a Go version using the GitHub Extension binary support in [gh-actions-usage](https://github.com/codiform/gh-actions-usage), but it's still a work in progress.
+I've rebuilt this extension in Go (golang) using the GitHub Extension binary support in [gh-actions-usage](https://github.com/codiform/gh-actions-usage).
 
 ## Installing
 
